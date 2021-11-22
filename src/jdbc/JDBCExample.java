@@ -25,9 +25,8 @@ public class JDBCExample {
 			//Open a connection
 			conn = DriverManager.getConnection(DB_URL, USER, PASS);
 
-			System.out.println("Welcome to LiLac Flower Shop!");
+			System.out.println("Welcome to LiLac Flower Shop! ");
 			mainPromptHelper();
-			
 			Scanner scanner = new Scanner(System.in); 
 
 			while(scanner.hasNextLine()) {
