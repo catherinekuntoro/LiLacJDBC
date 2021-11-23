@@ -162,8 +162,8 @@ public class JDBCExample {
 						isUnique = false;
 
 						System.out.println("We already have a flower of that type! "
-								+ "Enter \"A\" if you want an existing bouquet using  " + userInputFlower
-								+ ", or enter any other key if you want to re-enter your input.");
+								+ "Enter \"A\" if you want an existing bouquet using " + userInputFlower);
+						System.out.println("Or enter any other key if you want to re-enter your input.");
 
 						String userChoice = scanner.nextLine();
 
@@ -171,7 +171,7 @@ public class JDBCExample {
 							buyBouquet(conn, userInputFlower + " Bouquet");
 							return;
 						} else {
-							System.out.println("Sure. What flower do you want for your bouquet?");
+							System.out.println("You wanted to re-enter your input. Please enter the new type of flower you want for your bouquet");
 							break;
 						}
 					}
