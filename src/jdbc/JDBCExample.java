@@ -115,7 +115,7 @@ public class JDBCExample {
 		//Prompt for bouquet type: existing type bouquet or a new bouquet. 
 
 		createNewBouquetType(conn); // IF user wants a new bouquet
-		buyBouquet(conn, "PARAM: EXISTING BOUQUET THAT USER WANTS"); //ELSE, existing
+		//buyBouquet(conn, "PARAM: EXISTING BOUQUET THAT USER WANTS"); //ELSE, existing
 
 	}
 
@@ -124,8 +124,11 @@ public class JDBCExample {
 		System.out.println("TEST USER BOUQET NAME:" + userBouquetName); // cath testing
 
 		//check bouquet availability. if dont exist/out of stock, re prompt
-
-		//if bouquet available, Ask to go or vase
+		//use prepared statement bc we want to take user input
+		
+		//if bouquet has 0 stock, go back to the orderBouquet() method
+		
+		//else, if bouquet available, Ask to go or vase
 
 		//CALL INSERT TO SALE
 		//insertIntoSale(conn, cID, bID, pricePaid, packaging);
@@ -143,8 +146,11 @@ public class JDBCExample {
 			String userInputFlower = "";
 
 			while(scanner.hasNextLine()) {
+				// Get user input
 				userInputFlower = scanner.nextLine();
-
+				
+				
+				// Check  if the user input actually already exists/not
 				stmt1 = conn.createStatement();
 				ResultSet rs = stmt1.executeQuery("Select fName from Flower");
 
@@ -194,6 +200,7 @@ public class JDBCExample {
 					pstmt.setString(2, userColor);
 					pstmt.setInt(3, price);
 					pstmt.setInt(4, newfID);
+					
 					//pstmt.executeUpdate(); // COMMENTED OUT FR FOR TESTING PURPOSES
 
 					buyBouquet(conn, userInputFlower + " Bouquet");
@@ -262,6 +269,9 @@ public class JDBCExample {
 
 	// pseudocode here. called from insertIntoSale()
 	private static void updateBouquetNumCount(Connection conn, int cID, int bID, int pricePaid, String packaging) {
+		//updating bouquet number. use prepared statment to update the 
+		//numLeft of the bID that's passed into the param
+		
 		showCustomerReceipt(conn, cID, bID, pricePaid, packaging);	
 	}
 
@@ -338,6 +348,10 @@ public class JDBCExample {
 
 	private static void viewOrderHistory(Connection conn) {
 		
+		// ask for customer name
+		
+		// 
+		
 	}
 
 	private static void viewBouquetInformation(Connection conn) {
@@ -359,8 +373,10 @@ public class JDBCExample {
 
 			Scanner scanner = new Scanner(System.in);
 			System.out.println("Which flower bouquet would you like to learn more about? Or, enter \"Z\" to do something else.");
-
 			String userBouquetSelected = scanner.nextLine();
+			
+			//make a sql statement to check if the bouquet exists 
+			
 			if(userBouquetSelected.equals("Z")) {
 				return;
 			} else {
