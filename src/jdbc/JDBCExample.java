@@ -9,10 +9,10 @@ public class JDBCExample {
 	// JDBC driver name and database URL
 
 	//LiLac is the name of our database
-	static final String DB_URL = "jdbc:mysql://localhost/LiLac?serverTimezone=UTC";
+	static final String DB_URL = "jdbc:mysql://localhost/LiLAC?serverTimezone=UTC";
 
 	static final String USER = "root";
-	static final String PASS = "ckckck12"; //your computer's password
+	static final String PASS = "ds3"; //your computer's password
 
 	//static variables for customer information
 	static String cNameGlobal = "Erin Mac";
@@ -106,17 +106,76 @@ public class JDBCExample {
 		}
 	}
 
-	// pseudocode here. called from main()
+	// pseudocode here. called from main(). Luis
 	private static void orderBouquet(Connection conn) {
+		
+		Scanner scanner = new Scanner(System.in);
+		
 		//Get customer name and customer ID with scanner
+		System.out.print("Please enter your name: ");
+		String cName = scanner.nextLine();
+		System.out.println("\nPlease enter your ID: ");
+		String cID = scanner.nextLine();
+		int idNum = 0;
+		try {
+			idNum = Integer.parseInt(cID);
+		}catch(Exception e) {
+			System.out.println("ID entered is not a number");
+			e.printStackTrace();
+		}
+		
 
 		//If customer DOES NOT exist in Customer schema, insert it. else, nothing
+		PreparedStatement pstmt = null;
+		String SQL = "SELECT * FROM Customer WHERE cID = ?";
+		boolean hasResults = false;
+		try {
+			pstmt = conn.prepareStatement(SQL);
+			pstmt.setInt(1, idNum);
+			hasResults = pstmt.execute();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		// Customer does not exist in customer schema
+		if(!hasResults) {
+			SQL = "INSERT INTO CUSTOMER VALUES (?, ?, ?)";
+			try {
+				pstmt = conn.prepareStatement(SQL);
+				pstmt.setInt(1, idNum);
+				pstmt.setString(2, cName);
+				pstmt.setBoolean(3, false); // discountUser false by default
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
 
-		//Prompt for bouquet type: existing type bouquet or a new bouquet. 
-
-		createNewBouquetType(conn); // IF user wants a new bouquet
-		//buyBouquet(conn, "PARAM: EXISTING BOUQUET THAT USER WANTS"); //ELSE, existing
-
+		
+		
+		boolean invalidInput = true;
+		while(invalidInput) {
+			//Prompt for bouquet type: existing type bouquet or a new bouquet. 
+			System.out.println("Would you like to order an existing bouquet or a new bouquet?\n"
+					+ "Enter X for ordering an existing bouquet or enter Y to order a new bouquet");
+			
+			String input = scanner.nextLine();
+			input = input.toLowerCase();
+			
+			if(input.equals("x")) { // ordering existing bouquet
+				invalidInput = false;
+				System.out.println("Please enter the name of the bouquet you wish to buy: ");
+				input = scanner.nextLine();
+				buyBouquet(conn, input);
+				
+			} else if(input.equals("y")) { // order a new bouquet
+				invalidInput = false;
+				createNewBouquetType(conn); // IF user wants a new bouquet
+			}else {
+				System.out.println("Invalid input. Trying again...");
+			}
+		}
+		scanner.close();
 	}
 
 	// pseudocode here. called from orderBouquet() or createNewBouquet()
