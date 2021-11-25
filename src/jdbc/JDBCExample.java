@@ -12,7 +12,7 @@ public class JDBCExample {
 	static final String DB_URL = "jdbc:mysql://localhost/LiLAC?serverTimezone=UTC";
 
 	static final String USER = "root";
-	static final String PASS = "ds3"; //your computer's password
+	static final String PASS = "Fa415mh690@Y"; //your computer's password
 
 	//static variables for customer information
 	static String cNameGlobal = "Erin Mac";
@@ -406,16 +406,98 @@ public class JDBCExample {
 	}
 
 	private static void viewOrderHistory(Connection conn) {
-		
-		// ask for customer name
-		
-		// 
+
+		PreparedStatement pstmt = null;
+		try {
+			// ask for customer name
+			System.out.println("Please enter your name so we can get your order history: ");
+			Scanner scanner = new Scanner(System.in);
+			String name = "";
+			
+			while (scanner.hasNextLine())
+			{
+				name = scanner.nextLine();
+				
+				// check if Customer name is in Customer relation
+				String SQL = "Select * From Customer Where cName = ?";
+				
+				pstmt = conn.prepareStatement(SQL);
+				pstmt.setString(1, name);
+				
+				ResultSet rsNameCheck = pstmt.executeQuery();  
+				System.out.println();
+				
+				// if the Customer name input is in the customer, then proceed to get their order history in Sale relation
+				if (rsNameCheck.next() != false){
+					System.out.println("Customer name = " + rsNameCheck.getString("cName") + "; Customer cID = " + rsNameCheck.getInt("cID"));
+					// SQL Prepared statement selecting Customer's name, the name of the bouquet, the total price paid and the type of packaging for each order a customer made
+					SQL = "Select Customer.cName, Customer.cID, Bouquet.bName, Sale.pricePaid, Sale.packaging From Customer, Sale, Bouquet Where Customer.cName = ? and Customer.cID = Sale.cID and Sale.bID = Bouquet.bID";
+					
+					pstmt = conn.prepareStatement(SQL);
+					pstmt.setString(1, name);
+					
+					ResultSet rs = pstmt.executeQuery();  
+					
+					//Display result
+					System.out.println("Here are all your previous order history, " + name+ ".");
+					System.out.println();
+					while(rs.next()){
+						System.out.println("Bouquet name = " + rs.getString("Bouquet.bName") + "; Price paid = " + "$"+ rs.getInt("Sale.pricePaid")+ "; Packaging type = " + rs.getString("Sale.packaging"));
+					}
+					System.out.println();
+				}
+				
+				// if the input name is not in Customer relation, then call viewOrderHistory again to reprompt
+				else
+				{
+					System.out.println("Invalid input. It seems that your name isn't registered in our database as a customer. Please try again.");
+					viewOrderHistory(conn);
+					
+					// Once viewOrderHistory method is done and user wants to go back to main page, it would break the loop
+					// it wont execute the commands below if returnMain input is "y" to go back to main page
+					break;
+				}
+				
+				// After a customer is done viewing their order history, prompts user if they want to go back to main page
+				System.out.println("Would you like to exit out of your order history and return back to the main page? (y/n)");
+				if (scanner.hasNextLine()) {
+					String returnMain = scanner.nextLine();
+					
+					if (returnMain.equalsIgnoreCase("y"))
+					{
+						// returns to main helper prompt
+						scanner.close();
+						return;
+					}
+					else
+					{
+						System.out.println("Please enter your name so we can get your order history: ");
+					}
+				}
+			}
+
+
+		} catch(SQLException se){
+			//Handle errors for JDBC
+			se.printStackTrace();
+		}catch(Exception e){
+			//Handle errors for Class.forName
+			e.printStackTrace();
+		}finally{
+			//finally block used to close resources
+			try{
+				if(pstmt!=null)
+					pstmt.close();
+			}catch(SQLException se2){}// nothing we can do
+
+		}
 		
 	}
 
 	private static void viewBouquetInformation(Connection conn) {
 
 		Statement stmt = null;
+		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 
 		System.out.println("These are all of the bouquets we have in stock: ");
@@ -432,35 +514,63 @@ public class JDBCExample {
 
 			Scanner scanner = new Scanner(System.in);
 			System.out.println("Which flower bouquet would you like to learn more about? Or, enter \"Z\" to do something else.");
-			String userBouquetSelected = scanner.nextLine();
 			
-			//make a sql statement to check if the bouquet exists 
-			
-			if(userBouquetSelected.equals("Z")) {
-				return;
-			} else {
-				while(scanner.hasNextLine()) {
-					System.out.println("Enter \"A\" if you are interested in knowing the color of the bouquet's flowers.");
-					System.out.println("Enter \"B\" if you are interested in knowing when I last restocked the flowers in this bouquet.");
-					System.out.println("Enter \"C\" if you are interested in knowing the number of flowers in this bouquet.");
-					System.out.println("Or, enter \"Z\" to do something else.");
+			while (scanner.hasNextLine())
+			{
+				String userBouquetSelected = scanner.nextLine();
+				if (userBouquetSelected.equals("Z"))
+						{
+							return;
+						}
+				else
+				{
+					//make a sql statement to check if the bouquet exists 
+					
+					// check if bouquet name inputted is in Bouquet relation
+					String SQL = "Select * From Bouquet Where bName = ?";
+					pstmt = conn.prepareStatement(SQL);
+					
+					pstmt.setString(1, userBouquetSelected);
+					
+					ResultSet rsNameCheck = pstmt.executeQuery();  
+					System.out.println();
+					
+					if (rsNameCheck.next() != false)
+					{
+						System.out.println("Bouquet name = "+rsNameCheck.getString("bName")+", price = "+rsNameCheck.getInt("bPrice") + ", stock = " + rsNameCheck.getInt("numLeft"));
+						System.out.println("Enter \"A\" if you are interested in knowing the color of the bouquet's flowers.");
+						System.out.println("Enter \"B\" if you are interested in knowing when I last restocked the flowers in this bouquet.");
+						System.out.println("Enter \"C\" if you are interested in knowing the number of flowers in this bouquet.");
+						System.out.println("Or, enter \"Z\" to do something else.");
 
 
-					String userResponse = scanner.nextLine();
-					if(userResponse.equals("A")) { // bouquet flower color
-						viewFlowerColor(conn, userBouquetSelected);
-					}else if(userResponse.equals("B")){ // last restocked flower
-						viewFlowerLastRestocked(conn, userBouquetSelected);
-					}else if(userResponse.equals("C")) { // num flowers in bouquet
-						viewFlowerAmountInBouquet(conn, userBouquetSelected);
-					} else if(userResponse.equals("Z")) {
-						return;
-					}else {
-						System.out.println("Invalid input. Please re-enter a valid option.");
+						String userResponse = scanner.nextLine();
+						if(userResponse.equals("A")) { // bouquet flower color
+							viewFlowerColor(conn, userBouquetSelected);
+						}else if(userResponse.equals("B")){ // last restocked flower
+							viewFlowerLastRestocked(conn, userBouquetSelected);
+						}else if(userResponse.equals("C")) { // num flowers in bouquet
+							viewFlowerAmountInBouquet(conn, userBouquetSelected);
+						} else if(userResponse.equals("Z")) {
+							return;
+						}else {
+							System.out.println("Invalid input. Please re-enter a valid option.");
+						}
+						
+						System.out.println("Which flower bouquet would you like to learn more about? Or, enter \"Z\" to do something else.");
+						
 					}
+					else
+					{
+						System.out.println("Invalid input. It seems that bouquet name doesn't exist in our system. Please try again.");
+						viewBouquetInformation(conn);
+						return;
+					}
+					
 				}
-
 			}
+			
+
 		}
 		catch(SQLException se){
 			//Handle errors for JDBC
