@@ -12,11 +12,7 @@ public class JDBCExample {
 	static final String DB_URL = "jdbc:mysql://localhost/LiLAC?serverTimezone=UTC";
 
 	static final String USER = "root";
-	static final String PASS = "ds3"; //your computer's password
-
-	//static variables for customer information
-	static String cNameGlobal = "Erin Mac";
-	static int cIDGlobal = 0;	
+	static final String PASS = "ckckck12"; //your computer's password
 
 	public static void main(String[] args) {
 		Connection conn = null;
@@ -31,16 +27,17 @@ public class JDBCExample {
 
 			while(scanner.hasNextLine()) {
 				
-				String userInput = scanner.nextLine();
-				if(userInput.equals("V")) {
+				String userInput = scanner.nextLine().toUpperCase();
+				if(userInput.equals("A")) {
 					viewBouquetInformation(conn);
-				} else if (userInput.equals("D")) {
+				} else if (userInput.equals("B")) {
 					viewDiscountEligibility(conn);
-				} else if(userInput.equals("H")) {
+				} else if(userInput.equals("C")) {
 					viewOrderHistory(conn);
-				}else if (userInput.equals("O")) {
-					orderBouquet(conn);
-					
+				}else if (userInput.equals("D")) {
+					orderBouquet(conn);	
+				} else if (userInput.equals("E")) {
+					leftJoinCommand(conn);	
 				} else if (userInput.equals("TEST")) {
 					insertIntoSale(conn, 204, 3, 10, "vase"); //DUMMY VALUE cath testing
 				} else { // invalid input. 
@@ -48,9 +45,11 @@ public class JDBCExample {
 				}
 
 				// Re-prompting to repeat procedure
+				System.out.println();
 				System.out.println("We could help you with these following activities: ");
 				mainPromptHelper();
 			}
+			System.out.println("Goodbye!");
 			scanner.close();
 		}catch(SQLException se){
 			//Handle errors for JDBC
@@ -72,41 +71,48 @@ public class JDBCExample {
 	}//end main
 
 	private static void mainPromptHelper() {
-		System.out.println("Enter \"V\" to view bouquet information");
-		System.out.println("Enter \"D\" to view your discount eligibility");
-		System.out.println("Enter \"H\" to view your order history");
-		System.out.println("Enter \"O\" to order a bouquet");
+		System.out.println("Enter \"A\" to view bouquet information");
+		System.out.println("Enter \"B\" to view your discount eligibility");
+		System.out.println("Enter \"C\" to view your order history");
+		System.out.println("Enter \"D\" to order a bouquet");
+		System.out.println("Enter \"E\" to view users who hasn't bought any bouquets");
 	}
 	
-	
-	private static void updateDiscountUser(Connection conn) {
-
-		PreparedStatement pstmt = null;
+	// called from main
+	private static void leftJoinCommand(Connection conn) {
+		Statement stmt = null;
 		try {
-			if(isCustomerDiscountUser(conn, cNameGlobal)) {
-				pstmt = conn.prepareStatement("update Customer SET discountUser = True WHERE cName = ?");
-				pstmt.setString(1, cNameGlobal);
-				int rowUpdatedCount = pstmt.executeUpdate();
-				System.out.println(rowUpdatedCount + "in update discount user");
+			stmt = conn.createStatement();
+			String sql = "select * FROM Customer Left Outer Join Sale on Customer.cID = Sale.cID";
+			ResultSet rs = stmt.executeQuery(sql);
+			
+			while(rs.next()) {
+				if(rs.getString("packaging") == null) {
+					System.out.println("This customer hasn't bought any bouquet: " + rs.getString("cName"));
+				}
 			}
-		}
-		catch(SQLException se){
-			//Handle errors for JDBC
-			se.printStackTrace();
+			rs.close();
+			
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}catch(Exception e){
 			//Handle errors for Class.forName
 			e.printStackTrace();
 		}finally{
 			//finally block used to close resources
 			try{
-				if(pstmt!=null)
-					pstmt.close();
+				if(stmt!=null)
+					stmt.close();
 			}catch(SQLException se2){}// nothing we can do
 
 		}
+		
+		
 	}
-
-	// pseudocode here. called from main(). Luis
+	
+	// called from main(). Luis
 	private static void orderBouquet(Connection conn) {
 		
 		Scanner scanner = new Scanner(System.in);
@@ -181,7 +187,7 @@ public class JDBCExample {
 		scanner.close();
 	}
 
-	// pseudocode here. called from orderBouquet() or createNewBouquet()
+	// called from orderBouquet() or createNewBouquet()
 	private static void buyBouquet(Connection conn, String userBouquetName) {
 		System.out.println("TEST USER BOUQET NAME:" + userBouquetName); // cath testing
 
@@ -292,7 +298,7 @@ public class JDBCExample {
 		PreparedStatement pstmt = null;
 		try {
 			// Check first if this customer is a discount user.
-			if(isCustomerDiscountUser(conn, cNameGlobal)) {
+			if(isCustomerDiscountUser(conn, cID)) {
 				System.out.println("not supposed to be here"); // FOR CATH'S TESTING
 				pricePaid-= 2; //If they are, reduce the price paid by 2
 			} 
@@ -306,7 +312,7 @@ public class JDBCExample {
 
 			pstmt.executeUpdate();
 
-			if(isCustomerDiscountUser(conn, cNameGlobal)){ // FOR CATH'S TESTING
+			if(isCustomerDiscountUser(conn, cID)){ // FOR CATH'S TESTING
 				System.out.println("success");
 			}
 
@@ -344,12 +350,58 @@ public class JDBCExample {
 
 	private static void updatePackaging(Connection conn, int cID, int bID, int pricePaid) {
 		//prompt user
+		PreparedStatement pstmt1 = null;
+		PreparedStatement pstmt2 = null;
+		try {
+			// get the current packaging
+			String sql = "select packaging from sale where cID = ? and bId = ?";
+			pstmt1 = conn.prepareStatement(sql);
+			pstmt1.setInt(1, cID);
+			pstmt1.setInt(2, bID);
+			
+			ResultSet rs = pstmt1.executeQuery();
+			String currPackaging = "";
+			while(rs.next()) {
+				currPackaging = rs.getString("packaging");
+			}
+			System.out.println("Your current packaging type is " + currPackaging);
+			
+			// change the packaging
+			String sql2 = "";
+			if(currPackaging.equals("vase")) {
+				sql2 = "update sale set packaging = 'to go' where cID = ? and bId = ?";
+				System.out.println("Your packaging has been changed into to go.");
+			} else if(currPackaging.equals("to go")) {
+				sql2 = "update sale set packaging = 'vase' where cID = ? and bId = ?";
+				System.out.println("Your packaging has been changed into vase.");
+			}
+			pstmt2 = conn.prepareStatement(sql2);
+			pstmt2.executeUpdate();
+			
+			
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			se.printStackTrace();
+		}catch(Exception e){
+			//Handle errors for Class.forName
+			e.printStackTrace();
+		}finally{
+			//finally block used to close resources
+			try{
+				if(pstmt1!=null)
+					pstmt1.close();
+				if(pstmt2!=null)
+					pstmt2.close();
+			}catch(SQLException se2){}// nothing we can do
+
+		}
+		
 	}
 
-	private static boolean isCustomerDiscountUser(Connection conn, String customerName) throws SQLException {
-		CallableStatement cstmt = conn.prepareCall("{call getTotalSpentByCustomerName(?, ?)}"); 
+	private static boolean isCustomerDiscountUser(Connection conn, int cID) throws SQLException {
+		CallableStatement cstmt = conn.prepareCall("{call getTotalSpentByCustomerID(?, ?)}"); 
 
-		cstmt.setString(1, customerName); // preparing input
+		cstmt.setInt(1, cID); // preparing input
 		cstmt.registerOutParameter(2, Types.INTEGER); // register output
 
 		cstmt.executeUpdate();
@@ -365,24 +417,43 @@ public class JDBCExample {
 
 	private static void viewDiscountEligibility(Connection conn) {
 		CallableStatement cstmt = null;
-
+		PreparedStatement pstmt = null;
 		try {
+			
+			// ask for customer name
+			System.out.println("Please enter your name so we can get your order history: ");
+			Scanner scanner = new Scanner(System.in);
+			String name = scanner.nextLine();
 
-			cstmt = conn.prepareCall("{call getTotalSpentByCustomerName(?, ?)}"); 
+			// check if Customer name is in Customer relation
+			String SQL = "Select * From Customer Where cName = ?";
+			
+			pstmt = conn.prepareStatement(SQL);
+			pstmt.setString(1, name);
+			
+			ResultSet rsNameCheck = pstmt.executeQuery(); 
+			if(rsNameCheck.next()) {
+				
+				int cID = rsNameCheck.getInt("cID");
+				
+				cstmt = conn.prepareCall("{call getTotalSpentByCustomerID(?, ?)}"); 
+				cstmt.setInt(1, cID); // preparing input
+				cstmt.registerOutParameter(2, Types.INTEGER); // register output
 
-			cstmt.setString(1, cNameGlobal); // preparing input
-			cstmt.registerOutParameter(2, Types.INTEGER); // register output
+				cstmt.executeUpdate();
+				int totalCustomerSpent = cstmt.getInt(2);
+				System.out.print("Your total so far is $" + totalCustomerSpent + ".");
 
-			cstmt.executeUpdate();
-			int totalCustomerSpent = cstmt.getInt(2);
-			System.out.print("Your total so far is $" + totalCustomerSpent + ".");
-
-			if(totalCustomerSpent < 50){
-				System.out.println(" You need to spend $" + (50 - totalCustomerSpent) + 
-						" more to be eligible for a discount.");
+				if(totalCustomerSpent < 50){
+					System.out.println(" You need to spend $" + (50 - totalCustomerSpent) + 
+							" more to be eligible for a discount.");
+				} else {
+					System.out.println(" You are eligible for a discount!");
+				}	
 			} else {
-				System.out.println(" You are eligible for a discount!");
-			}	
+				System.out.println("Your name is not in your database. Please place an order. You are eligible for a discount if you spend at least $50.");
+			}
+			
 
 		}
 		catch(SQLException se){
