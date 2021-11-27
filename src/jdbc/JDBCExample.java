@@ -38,6 +38,8 @@ public class JDBCExample {
 					orderBouquet(conn);	
 				} else if (userInput.equals("E")) {
 					leftJoinCommand(conn);	
+				} else if (userInput.equals("F")) {
+					viewCustomersSpentOver25(conn);	
 				} else if (userInput.equals("TEST")) {
 					insertIntoSale(conn, 204, 3, 10, "vase"); //DUMMY VALUE cath testing
 				} else { // invalid input. 
@@ -76,6 +78,7 @@ public class JDBCExample {
 		System.out.println("Enter \"C\" to view your order history");
 		System.out.println("Enter \"D\" to order a bouquet");
 		System.out.println("Enter \"E\" to view users who hasn't bought any bouquets");
+		System.out.println("Enter \"F\" to view customers who spent $25 and over");
 	}
 	
 	// called from main
@@ -110,6 +113,37 @@ public class JDBCExample {
 		}
 		
 		
+	}
+	
+	// using group by and having to find customers who spent a cumulative total over $25. called from main()
+	private static void viewCustomersSpentOver25(Connection conn) {
+		Statement stmt = null;
+		try {
+			String SQL ="select Customer.cName, sum(Sale.pricePaid) as cumulative_pricePaid from Sale, Customer, Bouquet where Sale.cID = Customer.cID AND Sale.bID = Bouquet.bID group by cName having sum(Sale.pricePaid) >= 25";
+			stmt = conn.createStatement();
+			ResultSet rs = stmt.executeQuery(SQL);  
+
+			//Display result
+			System.out.println("Here are all the customers who spent a cumulative total of $25 and over.");
+			while(rs.next()){
+				System.out.println("Customer name = "+rs.getString("cName")+", cumulative price paid = "+ "$" +rs.getInt("cumulative_pricePaid"));
+			}
+			System.out.println();
+
+		} catch(SQLException se){
+			//Handle errors for JDBC
+			se.printStackTrace();
+		}catch(Exception e){
+			//Handle errors for Class.forName
+			e.printStackTrace();
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt!=null)
+					stmt.close();
+			}catch(SQLException se2){
+			}
+		}// nothing we can do
 	}
 	
 	// called from main(). Luis
