@@ -3,6 +3,7 @@ package jdbc; //this .java file is under a package named "jdbc"
 
 //STEP 1. Import required packages
 import java.sql.*;
+import java.sql.Date;
 import java.util.*;
 
 public class JDBCExample {
@@ -12,7 +13,8 @@ public class JDBCExample {
 	static final String DB_URL = "jdbc:mysql://localhost/LiLAC?serverTimezone=UTC";
 
 	static final String USER = "root";
-	static final String PASS = "ckckck12"; //your computer's password
+	static final String PASS = "ds3"; //your computer's password
+	
 
 	public static void main(String[] args) {
 		Connection conn = null;
@@ -154,7 +156,6 @@ public class JDBCExample {
 		//Get customer name and customer ID with scanner
 		System.out.print("Please enter your name: ");
 		String cName = scanner.nextLine();
-
 		//If customer DOES NOT exist in Customer schema, insert it. else, nothing
 		PreparedStatement pstmt = null;
 		String SQL = "SELECT * FROM Customer WHERE cName = ?";
@@ -181,13 +182,14 @@ public class JDBCExample {
 			} catch (SQLException e1) {
 				e1.printStackTrace();
 			}
-			
-			SQL = "INSERT INTO CUSTOMER VALUES (?, ?, ?)";
+
+			SQL = "INSERT INTO CUSTOMER VALUES (?, ?, ?, ?)";
 			try {
 				pstmt = conn.prepareStatement(SQL);
 				pstmt.setInt(1, maxCID);
 				pstmt.setString(2, cName);
 				pstmt.setBoolean(3, false); // discountUser false by default
+				pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
 				pstmt.executeUpdate();
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -221,19 +223,107 @@ public class JDBCExample {
 		scanner.close();
 	}
 
-	// called from orderBouquet() or createNewBouquet()
+	// called from orderBouquet() or createNewBouquet() -> Luis
 	private static void buyBouquet(Connection conn, String userBouquetName) {
-		System.out.println("TEST USER BOUQET NAME:" + userBouquetName); // cath testing
+		System.out.println("TEST USER BOUQET NAME:" + userBouquetName); // cath testing TODO: DELETE
 
-		//check bouquet availability. if dont exist/out of stock, re prompt
-		//use prepared statement bc we want to take user input
-		
-		//if bouquet has 0 stock, go back to the orderBouquet() method
-		
-		//else, if bouquet available, Ask to go or vase
-
-		//CALL INSERT TO SALE
-		//insertIntoSale(conn, cID, bID, pricePaid, packaging);
+		PreparedStatement pstmt = null;
+		String SQL = "SELECT * FROM Bouquet WHERE bName = ?";
+		Scanner scanner = new Scanner(System.in);
+		int numLeft = 0;
+		boolean hasResult = false;
+		int bID = 0;
+		int pricePaid = 0;
+		while(!hasResult) {
+			try {
+				pstmt = conn.prepareStatement(SQL);
+				pstmt.setString(1, userBouquetName);
+				ResultSet rs = pstmt.executeQuery();
+				hasResult = rs.next();
+				numLeft = rs.getInt(3);
+				bID = rs.getInt(6);
+				pricePaid = rs.getInt(1);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			//check bouquet availability. if dont exist/out of stock, re prompt
+			//use prepared statement bc we want to take user input
+			if(!hasResult) {
+				System.out.println("Unfortunately that bouquet is not available. Please enter a different name");
+				userBouquetName = scanner.nextLine();
+				continue;
+			} else if(numLeft <= 0) {//if bouquet has 0 stock, go back to the orderBouquet() method
+				System.out.println(userBouquetName + " is out of stock. Let's order a different one.");
+				orderBouquet(conn);
+				return;
+			}
+			boolean isVase = false;
+			boolean invalidInput = true;
+			String input = "";
+			while(invalidInput) {
+				System.out.println(userBouquetName + " is available! Would you like the bouquet to go or with a vase?\n"
+						+ "Enter 'X' for to go or 'Y' for vase");
+				input = scanner.nextLine();
+				
+				input = input.toLowerCase();
+				if(input.equals("x")) { // to go
+					invalidInput = false;
+					isVase = false;
+					
+				} else if(input.equals("y")) { // vase
+					invalidInput = false;
+					isVase = true;
+				}else {
+					System.out.println("Invalid input. Trying again...");
+					continue;
+				}
+				System.out.println("What is your name?");
+				input = scanner.next();
+			}
+			
+			// getting cID from name
+			int cID = 0;
+			SQL = "SELECT * FROM Customer WHERE cName = ?";
+			boolean hasResults = true;
+			Statement statement = null;
+			ResultSet rs = null;
+			try {
+				pstmt = conn.prepareStatement(SQL);
+				pstmt.setString(1, input);
+				rs = pstmt.executeQuery();
+				hasResults = rs.isBeforeFirst();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			// Customer does not exist in customer schema
+			if(!hasResults) {
+				int maxCID = 0;
+				try {
+					statement = conn.createStatement();
+					rs = statement.executeQuery("Select max(cID) from Customer");
+					rs.next();
+					maxCID = rs.getInt(1);
+					maxCID++;
+					cID = maxCID;
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+			}else { // customer exists
+				try {
+					rs.next();
+					cID = rs.getInt(1);
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
+			System.out.println("cID: " + cID + " bID: " + bID + " vase: " + (isVase ? "vase" : "to go"));
+			//CALL INSERT TO SALE
+			//insertIntoSale(conn, cID, bID, pricePaid, packaging);
+			insertIntoSale(conn, cID, bID, pricePaid, isVase ? "vase" : "to go");
+			
+		}
 	}
 
 	//called from orderBouquet()
@@ -303,7 +393,7 @@ public class JDBCExample {
 					pstmt.setInt(3, price);
 					pstmt.setInt(4, newfID);
 					
-					//pstmt.executeUpdate(); // COMMENTED OUT FR FOR TESTING PURPOSES
+					pstmt.executeUpdate(); // COMMENTED OUT FR FOR TESTING PURPOSES
 
 					buyBouquet(conn, userInputFlower + " Bouquet");
 				}
@@ -336,7 +426,7 @@ public class JDBCExample {
 				System.out.println("not supposed to be here"); // FOR CATH'S TESTING
 				pricePaid-= 2; //If they are, reduce the price paid by 2
 			} 
-
+			
 			//Parameters: (cID, bID, pricePaid, packaging)
 			pstmt = conn.prepareStatement("Insert Sale values (?, ?, ?, ?)");
 			pstmt.setInt(1, cID);
