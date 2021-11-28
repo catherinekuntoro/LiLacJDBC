@@ -259,8 +259,7 @@ public class JDBCExample {
 
 	// called from orderBouquet() or createNewBouquet() -> Luis
 	private static void buyBouquet(Connection conn, String userBouquetName) {
-		System.out.println("TEST USER BOUQET NAME:" + userBouquetName); // cath testing TODO: DELETE
-
+		
 		PreparedStatement pstmt = null;
 		String SQL = "SELECT * FROM Bouquet WHERE bName = ?";
 		Scanner scanner = new Scanner(System.in);
