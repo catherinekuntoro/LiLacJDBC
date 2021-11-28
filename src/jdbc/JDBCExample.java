@@ -42,7 +42,10 @@ public class JDBCExample {
 					leftJoinCommand(conn);	
 				} else if (userInput.equals("F")) {
 					viewCustomersSpentOver25(conn);	
-				} else if (userInput.equals("TEST")) {
+				} else if (userInput.equals("G")) {
+					viewAllItems(conn);
+				}
+				else if (userInput.equals("TEST")) {
 					insertIntoSale(conn, 204, 3, 10, "vase"); //DUMMY VALUE cath testing
 				} else { // invalid input. 
 					System.out.println("Invalid input.");
@@ -81,6 +84,7 @@ public class JDBCExample {
 		System.out.println("Enter \"D\" to order a bouquet");
 		System.out.println("Enter \"E\" to view users who hasn't bought any bouquets");
 		System.out.println("Enter \"F\" to view customers who spent $25 and over");
+		System.out.println("Enter \"G\" to view all items LiLAC might offer");
 	}
 	
 	// called from main
@@ -146,6 +150,31 @@ public class JDBCExample {
 			}catch(SQLException se2){
 			}
 		}// nothing we can do
+	}
+	
+	
+	// Called from main(). Luis
+	private static void viewAllItems(Connection conn) {
+		String output = "";
+		
+		String SQL = "SELECT fName FROM Flower UNION SELECT bName FROM Bouquet";
+		Statement stmt = null;
+		ResultSet rs = null;
+		
+		System.out.println("Here are all the items we use or sell here at LiLAC");
+		
+		try {
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(SQL);
+			
+			while(rs.next()) {
+				output += rs.getString(1) + "\n";
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println(output);
 	}
 	
 	// called from main(). Luis
