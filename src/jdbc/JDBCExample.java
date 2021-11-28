@@ -40,6 +40,7 @@ public class JDBCExample {
 					orderBouquet(conn);	
 				} else if (userInput.equals("E")) {
 					leftJoinCommand(conn);	
+<<<<<<< Upstream, based on origin/master
 				} else if (userInput.equals("F")) {
 					viewCustomersSpentOver25(conn);	
 				} else if (userInput.equals("G")) {
@@ -47,6 +48,10 @@ public class JDBCExample {
 				}
 				else if (userInput.equals("TEST")) {
 					insertIntoSale(conn, 204, 3, 10, "vase"); //DUMMY VALUE cath testing
+=======
+				} else if (userInput.equals("TEST")) {
+					updatePackaging(conn, 207, 4); //DUMMY VALUE cath testing
+>>>>>>> a8a4131 fixed updatePackaging()
 				} else { // invalid input. 
 					System.out.println("Invalid input.");
 				}
@@ -498,10 +503,10 @@ public class JDBCExample {
 
 	// pseudocode here. called from updateBouquetNumCount()
 	private static void showCustomerReceipt(Connection conn, int cID, int bID, int pricePaid, String packaging) {
-		updatePackaging(conn, cID, bID, pricePaid);
+		updatePackaging(conn, cID, bID);
 	}
 
-	private static void updatePackaging(Connection conn, int cID, int bID, int pricePaid) {
+	private static void updatePackaging(Connection conn, int cID, int bID) {
 		//prompt user
 		PreparedStatement pstmt1 = null;
 		PreparedStatement pstmt2 = null;
@@ -517,7 +522,7 @@ public class JDBCExample {
 			while(rs.next()) {
 				currPackaging = rs.getString("packaging");
 			}
-			System.out.println("Your current packaging type is " + currPackaging);
+			System.out.println("Your current packaging type is " + currPackaging + ".");
 			
 			// change the packaging
 			String sql2 = "";
@@ -529,6 +534,8 @@ public class JDBCExample {
 				System.out.println("Your packaging has been changed into vase.");
 			}
 			pstmt2 = conn.prepareStatement(sql2);
+			pstmt2.setInt(1, cID);
+			pstmt2.setInt(2, bID);
 			pstmt2.executeUpdate();
 			
 			
