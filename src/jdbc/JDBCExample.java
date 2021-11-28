@@ -40,18 +40,13 @@ public class JDBCExample {
 					orderBouquet(conn);	
 				} else if (userInput.equals("E")) {
 					leftJoinCommand(conn);	
-<<<<<<< Upstream, based on origin/master
 				} else if (userInput.equals("F")) {
 					viewCustomersSpentOver25(conn);	
 				} else if (userInput.equals("G")) {
 					viewAllItems(conn);
 				}
 				else if (userInput.equals("TEST")) {
-					insertIntoSale(conn, 204, 3, 10, "vase"); //DUMMY VALUE cath testing
-=======
-				} else if (userInput.equals("TEST")) {
 					updatePackaging(conn, 207, 4); //DUMMY VALUE cath testing
->>>>>>> a8a4131 fixed updatePackaging()
 				} else { // invalid input. 
 					System.out.println("Invalid input.");
 				}
@@ -259,7 +254,8 @@ public class JDBCExample {
 
 	// called from orderBouquet() or createNewBouquet() -> Luis
 	private static void buyBouquet(Connection conn, String userBouquetName) {
-		
+		System.out.println("TEST USER BOUQET NAME:" + userBouquetName); // cath testing TODO: DELETE
+
 		PreparedStatement pstmt = null;
 		String SQL = "SELECT * FROM Bouquet WHERE bName = ?";
 		Scanner scanner = new Scanner(System.in);
