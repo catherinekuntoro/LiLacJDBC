@@ -13,7 +13,7 @@ public class JDBCExample {
 	static final String DB_URL = "jdbc:mysql://localhost/LiLAC?serverTimezone=UTC";
 
 	static final String USER = "root";
-	static final String PASS = "ds3"; //your computer's password
+	static final String PASS = "ckckck12"; //your computer's password
 	
 
 	public static void main(String[] args) {
@@ -46,7 +46,7 @@ public class JDBCExample {
 					viewAllItems(conn);
 				}
 				else if (userInput.equals("TEST")) {
-					updatePackaging(conn, 207, 4); //DUMMY VALUE cath testing
+					updateBouquetNumCount(conn, 4); //DUMMY VALUE cath testing
 				} else { // invalid input. 
 					System.out.println("Invalid input.");
 				}
@@ -452,7 +452,6 @@ public class JDBCExample {
 		try {
 			// Check first if this customer is a discount user.
 			if(isCustomerDiscountUser(conn, cID)) {
-				System.out.println("not supposed to be here"); // FOR CATH'S TESTING
 				pricePaid-= 2; //If they are, reduce the price paid by 2
 			} 
 			
@@ -469,7 +468,8 @@ public class JDBCExample {
 				System.out.println("success");
 			}
 
-			updateBouquetNumCount(conn, cID, bID, pricePaid, packaging);
+			updateBouquetNumCount(conn, bID);
+			showCustomerReceipt(conn, cID, bID);	
 
 		} catch(SQLException se){
 			//Handle errors for JDBC
@@ -489,15 +489,50 @@ public class JDBCExample {
 	}
 
 	// pseudocode here. called from insertIntoSale()
-	private static void updateBouquetNumCount(Connection conn, int cID, int bID, int pricePaid, String packaging) {
-		//updating bouquet number. use prepared statment to update the 
-		//numLeft of the bID that's passed into the param
+	private static void updateBouquetNumCount(Connection conn, int bID) {
+		PreparedStatement pstmt = null;
+		PreparedStatement pstmt2 = null;
+		try {
+			pstmt2 = conn.prepareStatement("select numLeft from bouquet where bID = ?");
+			pstmt2.setInt(1, bID);
+			ResultSet rs = pstmt2.executeQuery();
+			while(rs.next()) {
+				System.out.println("Currently, we have " + rs.getInt("numLeft") + " of the bouquet in stock.");
+			}
+			
+			String sql = "update bouquet as b1 inner join (select * from bouquet where bID = ?) as b2 using (bID) set b1.numLeft = b2.numLeft - 1 where bID = ?;";
+			pstmt = conn.prepareStatement(sql);
+			pstmt.setInt(1, bID);
+			pstmt.setInt(2, bID);
+			pstmt.executeUpdate();
+			
+			rs = pstmt2.executeQuery();
+			while(rs.next()) {
+				System.out.println("Thanks to your purchase, now we have " + rs.getInt("numLeft") + " of the bouquet in stock!");
+			}
+			
+			
+		} catch(SQLException se){
+			//Handle errors for JDBC
+			se.printStackTrace();
+		}catch(Exception e){
+			//Handle errors for Class.forName
+			e.printStackTrace();
+		}finally{
+			//finally block used to close resources
+			try{
+				if(pstmt!=null) pstmt.close();
+				if(pstmt2!=null) pstmt2.close();
+			}catch(SQLException se2){}// nothing we can do
+
+		}
 		
-		showCustomerReceipt(conn, cID, bID, pricePaid, packaging);	
 	}
 
 	// pseudocode here. called from updateBouquetNumCount()
-	private static void showCustomerReceipt(Connection conn, int cID, int bID, int pricePaid, String packaging) {
+	private static void showCustomerReceipt(Connection conn, int cID, int bID) {
+		//given the cID and bID, show the customer name (name, not id), bouquet name (name, not bID), pricePaid, and packaging.
+		// inner join sale, bouquet, and customer. 
 		updatePackaging(conn, cID, bID);
 	}
 
