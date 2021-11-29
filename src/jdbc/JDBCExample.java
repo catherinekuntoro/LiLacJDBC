@@ -4,6 +4,8 @@ package jdbc; //this .java file is under a package named "jdbc"
 //STEP 1. Import required packages
 import java.sql.*;
 import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class JDBCExample {
@@ -46,7 +48,8 @@ public class JDBCExample {
 					viewAllItems(conn);
 				}
 				else if (userInput.equals("TEST")) {
-					updateBouquetNumCount(conn, 4); //DUMMY VALUE cath testing
+					//updateBouquetNumCount(conn, 4); //DUMMY VALUE cath testing
+					orderBouquet(conn);
 				} else { // invalid input. 
 					System.out.println("Invalid input.");
 				}
@@ -218,7 +221,9 @@ public class JDBCExample {
 				pstmt.setInt(1, maxCID);
 				pstmt.setString(2, cName);
 				pstmt.setBoolean(3, false); // discountUser false by default
-				pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+				
+				//pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+				pstmt.setDate(4, new Date(System.currentTimeMillis()));
 				pstmt.executeUpdate();
 			} catch (SQLException e) {
 				e.printStackTrace();
@@ -400,11 +405,9 @@ public class JDBCExample {
 
 				if(isUnique) {
 					// if reach this point, flower IS UNIQUE
-					System.out.println("TEST USER INPUT FLOWER: " + userInputFlower);
 
 					System.out.println("What color would you like?");
 					String userColor = scanner.nextLine();
-					System.out.println("TEST USER INPUT COLOR: " + userColor);
 
 					int price = (new Random().nextInt(5+20)) + 5; // random price
 
@@ -413,7 +416,8 @@ public class JDBCExample {
 					rs = stmt2.executeQuery("select max(fID) as fIDMAX from Flower");
 					rs.next();
 					int newfID = rs.getInt(1) + 1;
-					System.out.println("TESTING: THE NEW Fid" + newfID) ; 
+					System.out.println("The current highest fID is " + (newfID - 1) + 
+							". So, this new flower will have the fID " + newfID + "!");
 
 					// param: fName, color, fPrice, fID
 					pstmt = conn.prepareStatement("insert into Flower values (?, ?, ?, ?)");
@@ -422,7 +426,7 @@ public class JDBCExample {
 					pstmt.setInt(3, price);
 					pstmt.setInt(4, newfID);
 					
-					pstmt.executeUpdate(); // COMMENTED OUT FR FOR TESTING PURPOSES
+					pstmt.executeUpdate(); 
 
 					buyBouquet(conn, userInputFlower + " Bouquet");
 				}
