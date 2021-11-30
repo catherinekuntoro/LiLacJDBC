@@ -46,12 +46,18 @@ public class JDBCExample {
 					viewCustomersSpentOver25(conn);	
 				} else if (userInput.equals("G")) {
 					viewAllItems(conn);
-				}
-				else if (userInput.equals("TEST")) {
-					//updateBouquetNumCount(conn, 4); //DUMMY VALUE cath testing
-					//orderBouquet(conn);
-					showCustomerReceipt(conn, 203, 1);
-				} else { // invalid input. 
+				} else if (userInput.equals("1")) {
+					testFlowerSchema(conn);
+				} else if (userInput.equals("2")) {
+					testBouquetSchema(conn);
+				} else if (userInput.equals("3")) {
+					testFloristSchema(conn);
+				} else if (userInput.equals("4")) {
+					testCustomerSchema(conn);
+				} else if (userInput.equals("Z")) {
+					customerArchive(conn);
+				} 
+				else { // invalid input. 
 					System.out.println("Invalid input.");
 				}
 
@@ -89,6 +95,15 @@ public class JDBCExample {
 		System.out.println("Enter \"E\" to view users who hasn't bought any bouquets");
 		System.out.println("Enter \"F\" to view customers who spent $25 and over");
 		System.out.println("Enter \"G\" to view all items LiLAC might offer");
+		
+		System.out.println();
+		System.out.println("Enter 1 to check key constraint for Flower");
+		System.out.println("Enter 2 to check key and foreign key constraint for Bouquet");
+		System.out.println("Enter 3 to check foreign key constraint for Florist");
+		System.out.println("Enter 4 to check key constraint for Customer");
+		
+		System.out.println();
+		System.out.println("Enter Z to check CustomerArchive");
 	}
 
 	// called from main
@@ -991,4 +1006,175 @@ public class JDBCExample {
 			}
 		}// nothing we can do
 	}
+	
+	private static void testFlowerSchema(Connection conn) {
+		Statement stmt1 = null;
+		
+		try {
+			stmt1 = conn.createStatement();
+			System.out.println("insert into flower values ('name', 'color', 1, 1001)");
+			String sql = "insert into flower values ('name', 'color', 1, 1001)";
+			stmt1.executeUpdate(sql);
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			se.printStackTrace();
+		}catch(Exception e){
+			//Handle errors for Class.forName
+			e.printStackTrace();
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt1!=null) stmt1.close();
+			}catch(SQLException se2){
+			}
+		}
+	}
+
+	private static void testBouquetSchema(Connection conn) {
+		Statement stmt1 = null;
+		Statement stmt2 = null;
+		try {
+			stmt1 = conn.createStatement();
+			System.out.println("insert into bouquet values (1, 'bName', 1, 1, 1001, 1)");
+			String sql = "insert into bouquet values (1, 'bName', 1, 1, 1001, 1)";
+			stmt1.executeUpdate(sql);
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			System.out.println(se);
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt1!=null) stmt1.close();
+			}catch(SQLException se2){
+			}
+		}
+		
+		try {
+			stmt2 = conn.createStatement();
+			System.out.println("insert into bouquet values (1, 'bName', 1, 1, 1007, 7)");
+			String sql = "insert into bouquet values (1, 'bName', 1, 1, 1007, 7)";
+			stmt2.executeUpdate(sql);
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			System.out.println(se);
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt2!=null) stmt2.close();
+			}catch(SQLException se2){
+			}
+		}
+	}
+	
+	private static void testFloristSchema(Connection conn) {
+		Statement stmt1 = null;
+		try {
+			stmt1 = conn.createStatement();
+			System.out.println("insert into florist values (1007, 1, '2021-11-29')");
+			String sql = "insert into florist values (1007, 1, '2021-11-29')";
+			stmt1.executeUpdate(sql);
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			System.out.println(se);
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt1!=null) stmt1.close();
+			}catch(SQLException se2){
+			}
+		}
+	}
+	
+	private static void testCustomerSchema(Connection conn) {
+		Statement stmt1 = null;
+		try {
+			stmt1 = conn.createStatement();
+			System.out.println("insert into customer values (201, 'a', 0, '2021-11-20')");
+			String sql = "insert into customer values (201, 'a', 0, '2021-11-20')";
+			stmt1.executeUpdate(sql);
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			System.out.println(se);
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt1!=null) stmt1.close();
+			}catch(SQLException se2){
+			}
+		}
+	}
+	
+	private static void customerArchive(Connection conn) {
+		Statement stmt1 = null;
+		CallableStatement cstmt = null;
+		
+		try {
+			stmt1 = conn.createStatement();
+			System.out.println("select * from customer");
+			String sql = "select * from customer";
+			ResultSet rs = stmt1.executeQuery(sql);
+			
+			while(rs.next()) {
+				System.out.println("cID: " + rs.getInt("cID")
+				+ " cName: " + rs.getString("cName")
+				+ " discountUser: " + rs.getBoolean("discountUser")
+				+ " updatedAt: " + rs.getDate("updatedAt"));
+			}
+			
+			System.out.println("select * from customerarchive");
+			sql = "select * from customerarchive";
+			rs = stmt1.executeQuery(sql);
+			
+			while(rs.next()) {
+				System.out.println("cIDArchive: " + rs.getInt("cIDArchive")
+				+ " cNameArchive: " + rs.getString("cNameArchive")
+				+ " discountUserArchive: " + rs.getBoolean("discountUserArchive")
+				+ " updatedAtArchive: " + rs.getDate("updatedAtArchive"));
+			}
+			
+			System.out.println("{call archiveCustomerProcedure(?)}");
+			cstmt = conn.prepareCall("{call archiveCustomerProcedure(?)}");
+			String myDate = "2021/1/1";
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd");
+			java.util.Date date = sdf.parse(myDate);
+			cstmt.setDate(1, new java.sql.Date(date.getTime()));
+			cstmt.executeUpdate();
+			
+			System.out.println("select * from customerarchive");
+			sql = "select * from customerarchive";
+			rs = stmt1.executeQuery(sql);
+			
+			while(rs.next()) {
+				System.out.println("cIDArchive: " + rs.getInt("cIDArchive")
+				+ " cNameArchive: " + rs.getString("cNameArchive")
+				+ " discountUserArchive: " + rs.getBoolean("discountUserArchive")
+				+ " updatedAtArchive: " + rs.getDate("updatedAtArchive"));
+			}
+			
+			System.out.println("select * from customer");
+			sql = "select * from customer";
+			rs = stmt1.executeQuery(sql);
+			
+			while(rs.next()) {
+				System.out.println("cID: " + rs.getInt("cID")
+				+ " cName: " + rs.getString("cName")
+				+ " discountUser: " + rs.getBoolean("discountUser")
+				+ " updatedAt: " + rs.getDate("updatedAt"));
+			}
+			
+			
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			System.out.println(se);
+		}catch(Exception e) {
+			System.out.println(e);
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt1!=null) stmt1.close();
+			}catch(SQLException se2){
+			}
+		}
+	}
+	
 }//end JDBCExample
