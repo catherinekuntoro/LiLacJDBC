@@ -313,49 +313,53 @@ public class JDBCExample {
 					continue;
 				}
 				System.out.println("What is your name?");
-				input = scanner.next();
+				input = scanner.nextLine();
 			}
 			
 			// getting cID from name
 			int cID = 0;
 			SQL = "SELECT * FROM Customer WHERE cName = ?";
-			boolean hasResults = true;
+			//boolean hasResults = true;
 			Statement statement = null;
 			ResultSet rs = null;
 			try {
 				pstmt = conn.prepareStatement(SQL);
 				pstmt.setString(1, input);
 				rs = pstmt.executeQuery();
-				hasResults = rs.isBeforeFirst();
+				
+				// Customer does not exist in customer schema
+				if(!rs.next()) {
+					int maxCID = 0;
+					System.out.println("cust dont exist");
+					try {
+						statement = conn.createStatement();
+						rs = statement.executeQuery("Select max(cID) from Customer");
+						rs.next();
+						maxCID = rs.getInt(1);
+						maxCID++;
+						cID = maxCID;
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+				}else { // customer exists
+					try {
+						System.out.println("exist");
+						//rs.next();
+						cID = rs.getInt(1);
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+				System.out.println("cID: " + cID + " bID: " + bID + " vase: " + (isVase ? "vase" : "to go"));
+				//CALL INSERT TO SALE
+				//insertIntoSale(conn, cID, bID, pricePaid, packaging);
+				insertIntoSale(conn, cID, bID, pricePaid, isVase ? "vase" : "to go");
+				
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 			
-			// Customer does not exist in customer schema
-			if(!hasResults) {
-				int maxCID = 0;
-				try {
-					statement = conn.createStatement();
-					rs = statement.executeQuery("Select max(cID) from Customer");
-					rs.next();
-					maxCID = rs.getInt(1);
-					maxCID++;
-					cID = maxCID;
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-			}else { // customer exists
-				try {
-					rs.next();
-					cID = rs.getInt(1);
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-			System.out.println("cID: " + cID + " bID: " + bID + " vase: " + (isVase ? "vase" : "to go"));
-			//CALL INSERT TO SALE
-			//insertIntoSale(conn, cID, bID, pricePaid, packaging);
-			insertIntoSale(conn, cID, bID, pricePaid, isVase ? "vase" : "to go");
+			
 			
 		}
 	}
@@ -454,6 +458,7 @@ public class JDBCExample {
 	private static void insertIntoSale(Connection conn, int cID, int bID, int pricePaid, String packaging) {
 		PreparedStatement pstmt = null;
 		try {
+			Scanner scanner =new Scanner(System.in);
 			// Check first if this customer is a discount user.
 			if(isCustomerDiscountUser(conn, cID)) {
 				pricePaid-= 2; //If they are, reduce the price paid by 2
@@ -467,13 +472,21 @@ public class JDBCExample {
 			pstmt.setString(4, packaging);
 
 			pstmt.executeUpdate();
-
-			if(isCustomerDiscountUser(conn, cID)){ // FOR CATH'S TESTING
-				System.out.println("success");
-			}
-
+			
 			updateBouquetNumCount(conn, bID);
-			showCustomerReceipt(conn, cID, bID);	
+			
+			System.out.println("Would you like to change your packaging type? Currently, your packaging type is " + packaging + ".");
+			System.out.println("Press \"A\" if you would like to change your package type.");
+			System.out.println("Press anything else to finalize your purchase and see your receipt.");
+			String answer = scanner.nextLine().toUpperCase();
+			
+			if(answer.equals("A")) {
+				System.out.println("Sure! I can change the packaging type for you.");
+				updatePackaging(conn, cID, bID);
+			} else {
+				System.out.println("Sure! Let me show your receipt for this purchase.");
+				showCustomerReceipt(conn, cID, bID);
+			}
 
 		} catch(SQLException se){
 			//Handle errors for JDBC
@@ -537,7 +550,6 @@ public class JDBCExample {
 	private static void showCustomerReceipt(Connection conn, int cID, int bID) {
 		//given the cID and bID, show the customer name (name, not id), bouquet name (name, not bID), pricePaid, and packaging.
 		// inner join sale, bouquet, and customer. 
-		updatePackaging(conn, cID, bID);
 	}
 
 	private static void updatePackaging(Connection conn, int cID, int bID) {
