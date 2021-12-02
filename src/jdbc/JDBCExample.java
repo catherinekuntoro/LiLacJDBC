@@ -54,6 +54,8 @@ public class JDBCExample {
 					testFloristSchema(conn);
 				} else if (userInput.equals("4")) {
 					testCustomerSchema(conn);
+				} else if (userInput.equals("5")) {
+					testSaleSchema(conn);
 				} else if (userInput.equals("Z")) {
 					customerArchive(conn);
 				} 
@@ -101,6 +103,7 @@ public class JDBCExample {
 		System.out.println("Enter 2 to check key and foreign key constraint for Bouquet");
 		System.out.println("Enter 3 to check foreign key constraint for Florist");
 		System.out.println("Enter 4 to check key constraint for Customer");
+		System.out.println("Enter 5 to check key constraint for Sale");
 		
 		System.out.println();
 		System.out.println("Enter Z to check CustomerArchive");
@@ -1100,6 +1103,47 @@ public class JDBCExample {
 			try{
 				if(stmt1!=null) stmt1.close();
 			}catch(SQLException se2){
+			}
+		}
+	}
+	
+	private static void testSaleSchema(Connection conn) {
+		Statement stmt1 = null;
+		Statement stmt2 = null;
+		Statement stmt3 = null;
+		try {
+			stmt1 = conn.createStatement();
+			System.out.println("insert into sale values (207, 4, 12, 'to go')");
+			String sql = "insert into sale values (207, 4, 12, 'to go')";
+			stmt1.executeUpdate(sql);
+		}catch(SQLException se){
+			//Handle errors for JDBC
+			System.out.println(se);
+			}
+		
+		try {
+			stmt2 = conn.createStatement();
+			System.out.println("insert into sale values (213, 3, 30, 'to go')");
+			String sql = "insert into sale values (213, 3, 30, 'to go')";
+			stmt2.executeUpdate(sql);
+		}catch(SQLException se2){
+			//Handle errors for JDBC
+			System.out.println(se2);
+		}
+		
+		try {
+			stmt3 = conn.createStatement();
+			System.out.println("insert into sale values (207, 10, 12, 'to go')");
+			String sql = "insert into sale values (207, 10, 12, 'to go')";
+			stmt3.executeUpdate(sql);
+		}catch(SQLException se3){
+			//Handle errors for JDBC
+			System.out.println(se3);
+		}finally{
+			//finally block used to close resources
+			try{
+				if(stmt3!=null) stmt3.close();
+			}catch(SQLException se3){
 			}
 		}
 	}
